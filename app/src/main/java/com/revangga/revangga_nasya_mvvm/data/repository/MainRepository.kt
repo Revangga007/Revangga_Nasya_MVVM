@@ -1,6 +1,7 @@
 package com.revangga.revangga_nasya_mvvm.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.revangga.revangga_nasya_mvvm.data.local.DogsDatabase
 import com.revangga.revangga_nasya_mvvm.data.model.Dog
 import com.revangga.revangga_nasya_mvvm.data.model.DogsData
@@ -19,8 +20,9 @@ class MainRepository(context: Context) {
 
         withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
             result = try {
-                retrofit.getAllDogs().body()
+                retrofit.getAllDogs(limit = 20).body()
             } catch (e: Exception) {
+                Log.d("Exception", e.message.toString())
                 null
             }
         }
@@ -31,7 +33,7 @@ class MainRepository(context: Context) {
         var successInsert: Boolean
         withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
             val dogs = dogsData.map {
-                Dog(it.id.toLong(), it.url)
+                Dog(null, it.url)
             }
             successInsert = try {
                 database.dog().insertAllDogs(dogs)
