@@ -48,22 +48,4 @@ class MainActivity : AppCompatActivity(), DogView {
             }
         }
     }
-
-    override fun showLoading() {
-        runOnUiThread {
-            loadingUi?.show()
-        }
-    }
-
-    override fun hideLoading() {
-        runOnUiThread {
-            loadingUi?.dismiss()
-        }
-    }
-
-    override fun showMessage(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-        }
-    }
 }
