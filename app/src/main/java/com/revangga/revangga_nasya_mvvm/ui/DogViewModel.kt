@@ -10,6 +10,8 @@ import com.revangga.revangga_nasya_mvvm.data.model.DogsData
 import com.revangga.revangga_nasya_mvvm.data.repository.MainRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,14 +28,15 @@ class DogViewModel @Inject constructor(
     private val _loading = MutableLiveData(false)
     val loading: LiveData<Boolean> = _loading
 
-    suspend fun fetchAndaLoadDogs() {
+    suspend fun fetchAndLoadDogs() {
         viewModelScope.launch(ioDispatcher) {
-     repository.getAllDogs(
-         onStart = { _loading.postValue(true) },
-         onComplete = { _loading.postValue(false) },
-         onError = { _message.postValue(it) }     )
-
+            repository.getAllDogs(
+                onStart = { _loading.postValue(true) },
+                onComplete = { _loading.postValue(false) },
+                onError = { _message.postValue(it) }
+            ).collect {
+                _dogsDatabase.postValue( it)
+            }
         }
-
-
+    }
 }
