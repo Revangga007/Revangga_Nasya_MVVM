@@ -1,8 +1,11 @@
 package com.revangga.revangga_nasya_mvvm.ui
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.revangga.revangga_nasya_mvvm.DogViewModelFactory
 import com.revangga.revangga_nasya_mvvm.adapter.DogsAdapter
@@ -18,8 +21,8 @@ import kotlinx.coroutines.launch
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: DogViewModel
-    private var loadingUi: CustomLoadingDialog? = null
+    private val viewModel: DogViewModel by viewModels()
+    private lateinit var loadingUI: CustomLoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,26 +30,35 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val factory = DogViewModelFactory(MainRepository())
-        viewModel = ViewModelProvider(this, factory)[DogViewModel::class.java]
-        loadingUi = CustomLoadingDialog(this)
-
-        binding.btnDog.setOnClickListener {
-            CoroutineScope(Dispatchers.IO).launch {
-                viewModel.fetchAndLoadDogs()
-            }
-            setupObserver()
+        lifecycleScope.launch {
+            viewModel.fetchAndLoadDogs()
         }
+        loadingUI = CustomLoadingDialog(this)
+
         setupObserver()
     }
 
     private fun setupObserver() {
-        viewModel.dogsDatabase.observe(this) {
-            binding.recyclerDog.apply {
-                layoutManager = GridLayoutManager(context, 3)
-                adapter = DogsAdapter(it)
-
-            }
+        viewModel.message.observe(this) {
+            showMessageToast(it)
         }
+        viewModel.loading.observe(this) {
+            if (it) showLoading() else hideLoading()
+        }
+
+    }
+
+    private fun showMessageToast(msg: String?) {
+        msg?.let {
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showLoading() {
+        loadingUI.show()
+    }
+
+    private fun hideLoading() {
+        loadingUI.hide()
     }
 }
