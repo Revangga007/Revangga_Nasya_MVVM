@@ -8,7 +8,7 @@ import com.revangga.revangga_nasya_mvvm.data.model.Dog
 
 @Dao
 interface DogsDao {
-    @Query("select * from dogs")
+    @Query("select * from dogs order by id desc")
     fun getAllDogs(): List<Dog>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
