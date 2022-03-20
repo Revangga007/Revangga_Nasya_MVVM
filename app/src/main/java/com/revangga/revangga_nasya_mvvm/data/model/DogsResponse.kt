@@ -3,9 +3,7 @@ package com.revangga.revangga_nasya_mvvm.data.model
 
 import com.google.gson.annotations.SerializedName
 
-class DogsResponse(
-    @SerializedName("data")
-    val dogsData : ArrayList<DogsData> )
+class DogsResponse : ArrayList<DogsData>()
 
 data class DogsData(
     @SerializedName("breeds")

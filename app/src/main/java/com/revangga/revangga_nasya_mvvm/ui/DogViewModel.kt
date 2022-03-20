@@ -13,7 +13,6 @@ import javax.inject.Inject
 @HiltViewModel
 class DogViewModel @Inject constructor(
     private val repository: MainRepository,
-    private val ioDispatcher: CoroutineDispatcher
 ) : ViewModel() {
 
     private val _dogsDatabase = MutableLiveData<List<Dog>>()
