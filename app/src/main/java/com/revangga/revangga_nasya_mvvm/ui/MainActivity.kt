@@ -39,6 +39,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupObserver() {
+        viewModel.dogsDatabase.observe(this) {
+            binding.recyclerDog.apply {
+                layoutManager = GridLayoutManager(context, 3)
+                adapter = DogsAdapter(it)
+
+            }
+        }
         viewModel.message.observe(this) {
             showMessageToast(it)
         }
