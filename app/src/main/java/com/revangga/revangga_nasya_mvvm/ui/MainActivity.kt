@@ -30,16 +30,23 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        lifecycleScope.launch {
-            viewModel.fetchAndLoadDogs()
+        binding.btnDog.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                viewModel.fetchAndLoadDogs()
+            }
         }
         loadingUI = CustomLoadingDialog(this)
 
         setupObserver()
+
+        lifecycleScope.launch {
+            viewModel.fetchAndLoadDogs()
+        }
     }
 
     private fun setupObserver() {
         viewModel.dogsDatabase.observe(this) {
+            println("Pesan hit dogsDatabase LiveData")
             binding.recyclerDog.apply {
                 layoutManager = GridLayoutManager(context, 3)
                 adapter = DogsAdapter(it)
