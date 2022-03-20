@@ -1,55 +1,55 @@
 package com.revangga.revangga_nasya_mvvm.data.repository
 
-import android.content.Context
-import android.util.Log
-import com.revangga.revangga_nasya_mvvm.data.local.DogsDatabase
+import com.revangga.revangga_nasya_mvvm.data.local.DogsDao
 import com.revangga.revangga_nasya_mvvm.data.model.Dog
 import com.revangga.revangga_nasya_mvvm.data.model.DogsData
-import com.revangga.revangga_nasya_mvvm.data.model.DogsResponse
-import com.revangga.revangga_nasya_mvvm.data.network.ApiClient
+import com.revangga.revangga_nasya_mvvm.data.network.ApiService
+import com.skydoves.sandwich.message
+import com.skydoves.sandwich.onError
+import com.skydoves.sandwich.onException
+import com.skydoves.sandwich.suspendOnSuccess
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class MainRepository(context: Context) {
-    private val retrofit = ApiClient.instance
-    private val database = DogsDatabase.instance(context)
+class MainRepository @Inject constructor(
+    private val apiService: ApiService,
+    private val dogsDao: DogsDao,
+    private val ioDispatcher: CoroutineDispatcher
+) {
 
-    suspend fun getAllDogs(): DogsResponse? {
-        var result: DogsResponse?
+suspend fun getAllDogs(
+    onStart: () -> Unit,
+    onComplete: () -> Unit,
+    onError: (String?) -> Unit
+) = flow {
+    val dog = dogsDao.getAllDogs()
 
-        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
-            result = try {
-                retrofit.getAllDogs(limit = 20).body()
-            } catch (e: Exception) {
-                Log.d("Exception", e.message.toString())
-                null
+    if (dog.isEmpty()) {
+        val response = apiService.getAllDogs()
+        response.suspendOnSuccess {
+            val dogConvert = data.dogsData.map {
+                Dog(it.id.toLong(), it.url)
             }
+            dogsDao.insertAllDogs(dogConvert)
+            emit(dogConvert)
+        }.onError {
+            onError(this.message())
+        }.onException {
+            onError(message)
         }
-        return result
+    } else {
+        emit(dogsDao.getAllDogs())
     }
+}
+    .onStart { onStart() }
+    .onCompletion { onComplete() }
+    .flowOn(ioDispatcher)
 
-    suspend fun saveAllDogs(dogsData: List<DogsData>): Boolean {
-        var successInsert: Boolean
-        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
-            val dogs = dogsData.map {
-                Dog(null, it.url)
-            }
-            successInsert = try {
-                database.dog().insertAllDogs(dogs)
-                true
-            } catch (e: Exception) {
-                false
-            }
-        }
-        return successInsert
-    }
-
-    suspend fun loadAllDogs(): List<Dog> {
-        var result: List<Dog>
-        withContext(CoroutineScope(Dispatchers.IO).coroutineContext) {
-            result = database.dog().getAllDogs()
-        }
-        return result
-    }
 }

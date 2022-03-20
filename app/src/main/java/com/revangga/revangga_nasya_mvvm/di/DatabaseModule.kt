@@ -17,11 +17,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(application: Application): DogsDatabase {
-        return Room.databaseBuilder(
-            application,
-            DogsDatabase::class.java,
-            "dogs_database.db"
-        ).build()
+        return DogsDatabase.instance(application)
     }
 
     @Provides

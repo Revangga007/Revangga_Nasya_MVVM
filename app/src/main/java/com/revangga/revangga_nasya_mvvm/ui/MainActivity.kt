@@ -2,23 +2,27 @@ package com.revangga.revangga_nasya_mvvm.ui
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.revangga.revangga_nasya_mvvm.DogViewModelFactory
 import com.revangga.revangga_nasya_mvvm.adapter.DogsAdapter
 import com.revangga.revangga_nasya_mvvm.data.repository.MainRepository
 import com.revangga.revangga_nasya_mvvm.databinding.ActivityMainBinding
 import com.revangga.revangga_nasya_mvvm.dialog.CustomLoadingDialog
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity(), DogView {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: DogViewModel
-    private var loadingUi: CustomLoadingDialog? = null
+    private val viewModel: DogViewModel by viewModels()
+    private lateinit var loadingUI: CustomLoadingDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,20 +30,15 @@ class MainActivity : AppCompatActivity(), DogView {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val factory = DogViewModelFactory(MainRepository(this))
-        viewModel = ViewModelProvider(this, factory)[DogViewModel::class.java]
-        loadingUi = CustomLoadingDialog(this)
-
-        binding.btnDog.setOnClickListener {
-            setupObserver()
+        lifecycleScope.launch {
+            viewModel.fetchAndLoadDogs()
         }
+        loadingUI = CustomLoadingDialog(this)
+
         setupObserver()
     }
 
     private fun setupObserver() {
-        CoroutineScope(Dispatchers.IO).launch {
-            viewModel.fetchAndaLoadDogs()
-        }
         viewModel.dogsDatabase.observe(this) {
             binding.recyclerDog.apply {
                 layoutManager = GridLayoutManager(context, 3)
@@ -47,23 +46,26 @@ class MainActivity : AppCompatActivity(), DogView {
 
             }
         }
+        viewModel.message.observe(this) {
+            showMessageToast(it)
+        }
+        viewModel.loading.observe(this) {
+            if (it) showLoading() else hideLoading()
+        }
+
     }
 
-    override fun showLoading() {
-        runOnUiThread {
-            loadingUi?.show()
+    private fun showMessageToast(msg: String?) {
+        msg?.let {
+            Toast.makeText(this, it, Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun hideLoading() {
-        runOnUiThread {
-            loadingUi?.dismiss()
-        }
+    private fun showLoading() {
+        loadingUI.show()
     }
 
-    override fun showMessage(message: String) {
-        runOnUiThread {
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-        }
+    private fun hideLoading() {
+        loadingUI.hide()
     }
 }
